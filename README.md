@@ -20,8 +20,13 @@ The recreation focuses on "Red Fuji" by Hokusai. The technical approach involves
 
 The final recreated artwork can be seen here, alongside the original image and visualizations of the extracted data points:
 
-- [Recreated Red Fuji](images/final.png)
+![Recreated Red Fuji](images/final.png)
 
+![Extracted Cloud Data Visualization](images/extract_cloud.png)
+
+![Extracted Snow Data Visualization](images/extract_snow.png)
+
+![Original Image](images/original.png)
 
 ## Files
 

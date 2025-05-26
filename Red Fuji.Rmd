@@ -277,7 +277,7 @@ print(gg2)
 # The coordinate data of snow are extracted using extract_snow_data.py
 
 
-snow_df <- read.csv("snow.csv")
+snow_df <- read.csv("data/snow.csv")
 snow_layer <- geom_point(
   data = snow_df,
   aes(x = x, y = y),
