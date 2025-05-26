@@ -1,0 +1,320 @@
+---
+title: "Red Fuji"
+author: "Tran Hung Dat"
+date: "2025-05-13"
+output: html_document
+---
+
+```{r}
+# install.packages("tidyverse")
+# install.packages("readr")
+# install.packages("ggplot2")
+# install.packages("grid")  # part of base R, no need to install
+# install.packages("dplyr")
+# install.packages("scales")
+# install.packages("colorspace")
+# install.packages("magick")
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(grid)
+library(dplyr)
+library(scales)
+library(colorspace)
+library(magick)
+
+```
+
+
+# 0. Load image & dimensions
+```{r}
+# Load original image
+img <- image_read("images/original.png")
+info <- image_info(img)
+img_width  <- info$width
+img_height <- info$height
+
+# Print original image
+gg1 <- ggplot() +
+  annotation_custom(
+    rasterGrob(img, width=unit(1,"npc"), height=unit(1,"npc")),
+    xmin=0, xmax=img_width, ymin=0, ymax=img_height
+  ) +
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA)
+  )
+print(gg1)
+
+```
+
+
+# 1. Mountain (sky) polygon
+```{r}
+# Define the Mountain curves
+line   <- data.frame(x = c(1158,1225), y = c(163,167))
+curve2 <- bezier(c(1225,167), c(1360,370), c(1536,500), n = 100)
+mount_outline <- bind_rows(curve1, line, curve2)
+mount_poly <- bind_rows(
+  mount_outline,
+  data.frame(x = c(max(mount_outline$x), min(mount_outline$x)), y = c(0, 0))
+)
+
+# The rest of the area will be the sky
+sky_layer <- geom_polygon(
+  data = mount_poly,
+  aes(x = x, y = img_height - y),
+  fill  = "#316283",
+  color = NA
+)
+
+gg2 <- ggplot() +
+  #the layers in order
+  sky_layer   +
+  
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  # Simple color for mountain for now
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+print(gg1)
+print(gg2)
+
+
+```
+
+
+# 2. Forest polygon
+```{r}
+# Define the Forest Area
+bezier <- function(p0, p1, p2, n = 100) {
+  t <- seq(0, 1, length.out = n)
+  data.frame(
+    x = (1 - t)^2 * p0[1] + 2*(1 - t)*t * p1[1] + t^2 * p2[1],
+    y = (1 - t)^2 * p0[2] + 2*(1 - t)*t * p1[2] + t^2 * p2[2]
+  )
+}
+curve1 <- bezier(c(0, 856), c(715, 700), c(1158, 163), n = 100)
+forest_pts <- data.frame(
+  x = c(552,621,532,660,552,739,658,849,795,1027,766,1254,934,1500),
+  y = c(663,679,711,724,769,789,808,819,840,861,895,921,964,1024)
+)
+dists    <- sqrt((curve1$x - forest_pts$x[1])^2 + (curve1$y - forest_pts$y[1])^2)
+idx_min  <- which.min(dists)
+mount_seg <- curve1[1:idx_min, ]
+edge     <- data.frame(x = c(1449, 0, 0), y = c(1024, 1024, 856))
+forest_poly <- rbind(mount_seg, forest_pts, edge)
+
+forest_layer <- geom_polygon(
+  data = forest_poly,
+  aes(x = x, y = img_height - y),
+  fill  = "forestgreen",
+  alpha = 0.5,
+  color = "darkgreen",
+  size  = 1
+)
+
+
+gg2 <- ggplot() +
+  #the layers in order
+  sky_layer   +
+  forest_layer+
+  
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+print(gg1)
+print(gg2)
+
+
+```
+
+
+# 3. Clouds as points (from cloud.csv)
+```{r}
+# The coordinate data of clouds are extracted using extract_cloud_data.py
+
+cloud_df <- read.csv("data/cloud.csv")
+cloud_layer <- geom_point(
+  data = cloud_df,
+  aes(x = x, y = y),
+  shape = 21, fill = "#e0dccd", color = "#e0dccd", size = 0.66,
+  inherit.aes = FALSE
+)
+
+gg2 <- ggplot() +
+  #the layers in order
+  sky_layer   +
+  forest_layer+
+  cloud_layer +
+  
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+
+print(gg1)
+print(gg2)
+
+```
+
+
+
+```{r}
+# 4. Gradient raster for the mountain
+lower_color   <- "#70897f"  # foot
+middle_color  <- "#9e5d4a"  # mid
+highest_color <- "#714739"  # peak
+grad_colors   <- colorRampPalette(
+  c(highest_color, middle_color, lower_color)
+)(img_height)
+grad_raster <- as.raster(matrix(grad_colors, ncol = 1, byrow = TRUE))
+
+gg2 <- ggplot() +
+    annotation_raster(
+    grad_raster,
+    xmin = 0, xmax = img_width,
+    ymin = 0, ymax = img_height
+  ) +
+  
+  #the layers in order
+  sky_layer   +
+  forest_layer+
+  cloud_layer +
+
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+print(gg1)
+print(gg2)
+
+```
+
+
+# 5. Trees from CSV
+```{r}
+# The coordinate data of trees are extracted using extract_tree_data.py
+
+trees_df <- read.csv("data/trees.csv")
+tree_layer <- geom_point(
+  data = trees_df,
+  aes(x = x, y = y),
+  shape = 21, fill = "#304b5e", color = "#4d6064", size = 1.5,
+  inherit.aes = FALSE
+)
+
+
+gg2 <- ggplot() +
+    annotation_raster(
+    grad_raster,
+    xmin = 0, xmax = img_width,
+    ymin = 0, ymax = img_height
+  ) +
+  
+  #the layers in order, the forest layer is no longer needed
+  sky_layer   +
+  #forest_layer+
+  cloud_layer +
+  tree_layer  +
+
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+print(gg1)
+print(gg2)
+
+
+```
+
+# 6. Snow from CSV
+
+```{r}
+# The coordinate data of snow are extracted using extract_snow_data.py
+
+
+snow_df <- read.csv("snow.csv")
+snow_layer <- geom_point(
+  data = snow_df,
+  aes(x = x, y = y),
+  shape = 21, fill = "#ebe3d4", color = "#ebe3d4", size = 1.25,
+  inherit.aes = FALSE
+)
+
+gg2 <- ggplot() +
+    annotation_raster(
+    grad_raster,
+    xmin = 0, xmax = img_width,
+    ymin = 0, ymax = img_height
+  ) +
+  
+  #the layers in order
+  sky_layer   +
+  #forest_layer+
+  cloud_layer +
+  tree_layer  +
+  snow_layer  +
+  
+  coord_fixed(
+    ratio = 1,
+    xlim  = c(0, img_width),
+    ylim  = c(0, img_height),
+    expand= FALSE
+  ) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#b5533c", color = NA),
+    plot.background  = element_rect(fill = "white",   color = NA)
+  )
+print(gg1)
+print(gg2)
+
+
+```
+
+
+
