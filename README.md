@@ -1,7 +1,7 @@
 # Art Recreation using R and ggplot2
 
 This project explores the intersection of art and data visualization by recreating the iconic "Red Fuji" by Hokusai using R.
-- [Original Image](images/original.png)
+![Original Image](images/Red Fuji by Hokusai.jpg)
 ## Motivation
 
 This project allows me to expand my technical skills in R while exploring artistic expression. I am especially interested in how R's plotting ecosystem (e.g., `ggplot2`, `grid`) can be used not only for data communication but also for creative visual storytelling.

@@ -2,7 +2,9 @@
 title: "Red Fuji"
 author: "Tran Hung Dat"
 date: "2025-05-13"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r}
@@ -60,6 +62,17 @@ print(gg1)
 ```{r}
 # Define the Mountain curves
 line   <- data.frame(x = c(1158,1225), y = c(163,167))
+
+# Use Bezier function for better smooth
+bezier <- function(p0, p1, p2, n = 100) {
+  t <- seq(0, 1, length.out = n)
+  data.frame(
+    x = (1 - t)^2 * p0[1] + 2*(1 - t)*t * p1[1] + t^2 * p2[1],
+    y = (1 - t)^2 * p0[2] + 2*(1 - t)*t * p1[2] + t^2 * p2[2]
+  )
+}
+
+curve1 <- bezier(c(0, 856), c(715, 700), c(1158, 163), n = 100)
 curve2 <- bezier(c(1225,167), c(1360,370), c(1536,500), n = 100)
 mount_outline <- bind_rows(curve1, line, curve2)
 mount_poly <- bind_rows(
@@ -91,7 +104,7 @@ gg2 <- ggplot() +
     panel.background = element_rect(fill = "#b5533c", color = NA),
     plot.background  = element_rect(fill = "white",   color = NA)
   )
-print(gg1)
+#print(gg1)
 print(gg2)
 
 
@@ -101,14 +114,7 @@ print(gg2)
 # 2. Forest polygon
 ```{r}
 # Define the Forest Area
-bezier <- function(p0, p1, p2, n = 100) {
-  t <- seq(0, 1, length.out = n)
-  data.frame(
-    x = (1 - t)^2 * p0[1] + 2*(1 - t)*t * p1[1] + t^2 * p2[1],
-    y = (1 - t)^2 * p0[2] + 2*(1 - t)*t * p1[2] + t^2 * p2[2]
-  )
-}
-curve1 <- bezier(c(0, 856), c(715, 700), c(1158, 163), n = 100)
+
 forest_pts <- data.frame(
   x = c(552,621,532,660,552,739,658,849,795,1027,766,1254,934,1500),
   y = c(663,679,711,724,769,789,808,819,840,861,895,921,964,1024)
@@ -145,7 +151,7 @@ gg2 <- ggplot() +
     panel.background = element_rect(fill = "#b5533c", color = NA),
     plot.background  = element_rect(fill = "white",   color = NA)
   )
-print(gg1)
+#print(gg1)
 print(gg2)
 
 
@@ -182,7 +188,7 @@ gg2 <- ggplot() +
     plot.background  = element_rect(fill = "white",   color = NA)
   )
 
-print(gg1)
+#print(gg1)
 print(gg2)
 
 ```
@@ -222,7 +228,7 @@ gg2 <- ggplot() +
     panel.background = element_rect(fill = "#b5533c", color = NA),
     plot.background  = element_rect(fill = "white",   color = NA)
   )
-print(gg1)
+#print(gg1)
 print(gg2)
 
 ```
@@ -265,7 +271,7 @@ gg2 <- ggplot() +
     panel.background = element_rect(fill = "#b5533c", color = NA),
     plot.background  = element_rect(fill = "white",   color = NA)
   )
-print(gg1)
+#print(gg1)
 print(gg2)
 
 
@@ -310,7 +316,7 @@ gg2 <- ggplot() +
     panel.background = element_rect(fill = "#b5533c", color = NA),
     plot.background  = element_rect(fill = "white",   color = NA)
   )
-print(gg1)
+#print(gg1)
 print(gg2)
 
 
